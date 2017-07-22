@@ -5,32 +5,152 @@ require 'nokogiri'
 require 'anemone'
 require 'mechanize'
 require 'pry'
+require 'kconv'
+# jsはcapybaraかseleniumの予定
 
-url = "http://race.netkeiba.com/"
+# -----------------------------------------------
+# 第一階層
+## 全レース(24~36レースを取得)
 
 
-#doc = Nokogiri.HTML(open("http://nokogiri.org/"))
-doc = Nokogiri.HTML(open(url), nil, 'utf-8')
+# 第二階層
+## 各レースの情報(枠番、ジョッキー、調教師、オッズ 、 斤量 ...)
 
-# ページに含まれるリンクを出力する
-doc.css('a').each do |element|
-  puts element[:href]
+
+#第三階層
+## 各レースのそれぞれの馬の情報(基本ここのデータでロジックを組む)
+
+# -----------------------------------------------
+
+
+
+
+# url = "http://race.netkeiba.com/"
+race_url = "http://race.netkeiba.com/?pid=race_old&id=c201707030601" # 動的にする
+
+ary_list = []
+
+charset = nil
+# ページの中のhtml
+html = open(race_url) do |f|
+  charset = f.charset
+  puts "-----------------------"
+  puts "charsettttttttttttttttttttttttt"
+  puts charset
+
+  f.read # htmlを読み込んでhtmlに渡す
 end
-# =>
-# http://www.homes.co.jp/
-# http://www.homes.co.jp/contents/no1/
-# http://www.homes.co.jp/contents/abouthomes/
-# http://www.homes.co.jp/contents/sitemap/
-# http://www.homes.co.jp/callcenter/
-# ...
+# htmlをパース（解析）してオブジェクトを生成
+doc = Nokogiri::HTML.parse(html.toutf8, nil, 'utf-8')
+
+# puts doc
+race_title = doc.css("title")
+puts race_title
+# 2017/07/16 中京 1R 未勝利 / 出馬表｜レース情報(JRA) - netkeiba.com
 
 
-# h2のテキストを出力する
-doc2 = Nokogiri.HTML(open(url), nil, 'utf-8')
-doc.xpath('//h2').each do |e|
-  puts e.text
+
+
+
+# １レースの馬の情報 (第二階層)
+
+horse_info = doc.css("tr.bml1") #=>  各馬の情報がとりあえず取れる
+puts horse_info
+
+uma_count =0
+horse_info.each do |info|
+  uma_count +=1
+  # binding.pry
+  horse_data = []
+  # 枠
+  puts "枠"
+  puts info.elements[0].children[0].text
+  puts "===================="
+  puts "馬番: #{uma_count}"
+  # 馬の詳細URL
+  puts info.elements[4].children[1].children[1].attributes["href"].value
+  # 馬名
+  puts info.elements[4].children[1].children[1].attributes["title"].value
+  # 年齢
+  puts info.elements[5].children.text
+  # 斤量
+  puts info.elements[6].children.text
+  # ジョッキー
+  puts info.elements[7].children.text # 松若
+  # ジョッキーのURL
+  puts info.elements[7].children[0].attributes["href"].value
+
+  # 調教師name
+  puts info.elements[8].children[0].attributes["title"].value
+
+  # 調教師 URL
+  puts info.elements[8].children[0].attributes["href"].value
+
+  # 馬体重
+  puts info.elements[9].children[0].text
+
+  # 単勝オッズ
+  puts "単勝オッズ"
+  puts info.elements[10].children[0].text
+
+  # 人気
+  puts "単勝人気"
+  puts info.elements[11].children[0].text
 end
 
+
+# puts horse_info
+# <td class="txt_l horsename">
+# <div>
+# <a href="http://db.netkeiba.com/horse/2015101921/" target="_blank" title="ノーボーダー">ノーボーダー</a>
+# </div>
+# </td>
+# <td class="txt_l"><a href="http://db.netkeiba.com/jockey/01014/" target="_blank" title="福永">福永</a></td>
+# <td class="txt_l"><a href="http://db.netkeiba.com/trainer/01110/" target="_blank" title="清水久">清水久</a></td>
+# <td class="txt_l">472(-6)</td>
+# <td class="txt_l">
+#  ..
+# ......
+
+
+
+# est_venture_100_list = []
+#
+#   # スクレイピング先のURL
+#   url = "http://best100.v-tsushin.jp/"
+#   charset = nil
+#   html = open(url) do |f|
+#     charset = f.charset # 文字種別を取得
+#     f.read # htmlを読み込んで変数htmlに渡す
+#   end
+#
+#   # htmlをパース(解析)してオブジェクトを生成
+#   doc = Nokogiri::HTML.parse(html.toutf8, nil, 'utf-8')
+#   # id=companyListのulを取得
+#   companies = doc.css("ul#companyList")
+#   # id=companyListのul以下のliを配列で取得
+#   company_list = companies.css("li")
+#   # 配列内のliを一つ一つeachでfetchする
+#   company_list.each do |company|
+#     # dataを保存するArrayを作成
+#     data = []
+#     count += 1
+#     # liの子要素であるimgのtitle情報を取得
+#     name = company.css("img")[0][:title]
+#     # liの子要素であるaのhrehパラメータを取得
+#     url = company.css("a")[0][:href]
+#     # liの子要素であるimgのsrcパラメータを取得
+#     logo = company.css("img")[0][:src]
+#
+#     # 各要素を確認
+#     p count, name, url, logo
+#
+#     # data配列に取得した情報を格納
+#     data.push(count)
+#     data.push(name.tosjis)
+#     data.push(url.tosjis)
+#     data.push(logo.tosjis)
+#
 
 
 
