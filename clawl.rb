@@ -6,6 +6,7 @@ require 'anemone'
 require 'mechanize'
 require 'pry'
 require 'kconv'
+require 'csv'
 # jsはcapybaraかseleniumの予定
 
 # -----------------------------------------------
@@ -23,81 +24,130 @@ require 'kconv'
 # -----------------------------------------------
 
 
+class Race
+
+  # url = "http://race.netkeiba.com/"
+  race_url = "http://race.netkeiba.com/?pid=race_old&id=c201707030601" # 動的にする
+
+  horse_list = []  # 馬データ突っ込む
+
+  charset = nil
+  # ページの中のhtml
+  html = open(race_url) do |f|
+    charset = f.charset
+    puts "-----------------------"
+    puts "charsettttttttttttttttttttttttt"
+    puts charset
+
+    f.read # htmlを読み込んでhtmlに渡す
+  end
+  # htmlをパース（解析）してオブジェクトを生成
+  doc = Nokogiri::HTML.parse(html.toutf8, nil, 'utf-8')
+
+  # puts doc
+  race_title = doc.css("title")
+  puts race_title
+  # 2017/07/16 中京 1R 未勝利 / 出馬表｜レース情報(JRA) - netkeiba.com
 
 
-# url = "http://race.netkeiba.com/"
-race_url = "http://race.netkeiba.com/?pid=race_old&id=c201707030601" # 動的にする
 
-ary_list = []
 
-charset = nil
-# ページの中のhtml
-html = open(race_url) do |f|
-  charset = f.charset
-  puts "-----------------------"
-  puts "charsettttttttttttttttttttttttt"
-  puts charset
 
-  f.read # htmlを読み込んでhtmlに渡す
+  # １レースの馬の情報 (第二階層)
+
+  horse_info = doc.css("tr.bml1") #=>  各馬の情報がとりあえず取れる
+  puts horse_info
+
+  uma_count =0
+  horse_info.each do |info|
+    uma_count +=1
+    # binding.pry
+    horse_data = []
+
+
+
+    # 枠
+    puts "枠"
+    waku = info.elements[0].children[0].text
+    puts waku
+    horse_data << waku
+    puts "===================="
+    puts "馬番: #{uma_count}"
+    umaban = uma_count
+    horse_data << umaban
+
+
+    horse_url = info.elements[4].children[1].children[1].attributes["href"].value
+    # 馬の詳細URL
+    puts horse_url
+    horse_data << horse_url
+
+    # 馬名
+    horse_name = info.elements[4].children[1].children[1].attributes["title"].value
+    horse_data << horse_name
+    puts horse_name
+
+
+    # 年齢
+    old = info.elements[5].children.text
+    horse_data << old
+    puts old
+
+    # 斤量
+    basis_weight = info.elements[6].children.text
+    puts basis_weight
+    horse_data << basis_weight
+
+    # ジョッキー
+    jockey = info.elements[7].children.text
+    puts jockey # 松若
+    horse_data << jockey
+
+    # ジョッキーのURL
+    jockey_url = info.elements[7].children[0].attributes["href"].value
+    puts jockey_url
+    horse_data << jockey_url
+
+    # 調教師name
+    trainer = info.elements[8].children[0].attributes["title"].value
+
+    puts trainer
+    horse_data << trainer
+
+    # 調教師 URL
+    trainer_url = info.elements[8].children[0].attributes["href"].value
+    horse_data << trainer_url
+    puts info.elements[8].children[0].attributes["href"].value
+
+    # 馬体重
+    horse_weight = info.elements[9].children[0].text
+    puts horse_weight
+    horse_data << horse_weight
+
+
+    # 単勝オッズ
+    puts "単勝オッズ"
+    odds = info.elements[10].children[0].text
+    puts odds
+    horse_data << odds
+
+    # 人気
+    puts "単勝人気"
+    ninki = info.elements[11].children[0].text
+    puts ninki
+    horse_data << ninki
+
+    horse_list << horse_data
+  end
+
+  # raise
+  # CSVにエクスポート
+  CSV.open("race_info.csv", "wb") do |csv|
+    horse_list.each do |r|
+      csv << r
+    end
+  end
 end
-# htmlをパース（解析）してオブジェクトを生成
-doc = Nokogiri::HTML.parse(html.toutf8, nil, 'utf-8')
-
-# puts doc
-race_title = doc.css("title")
-puts race_title
-# 2017/07/16 中京 1R 未勝利 / 出馬表｜レース情報(JRA) - netkeiba.com
-
-
-
-
-
-# １レースの馬の情報 (第二階層)
-
-horse_info = doc.css("tr.bml1") #=>  各馬の情報がとりあえず取れる
-puts horse_info
-
-uma_count =0
-horse_info.each do |info|
-  uma_count +=1
-  # binding.pry
-  horse_data = []
-  # 枠
-  puts "枠"
-  puts info.elements[0].children[0].text
-  puts "===================="
-  puts "馬番: #{uma_count}"
-  # 馬の詳細URL
-  puts info.elements[4].children[1].children[1].attributes["href"].value
-  # 馬名
-  puts info.elements[4].children[1].children[1].attributes["title"].value
-  # 年齢
-  puts info.elements[5].children.text
-  # 斤量
-  puts info.elements[6].children.text
-  # ジョッキー
-  puts info.elements[7].children.text # 松若
-  # ジョッキーのURL
-  puts info.elements[7].children[0].attributes["href"].value
-
-  # 調教師name
-  puts info.elements[8].children[0].attributes["title"].value
-
-  # 調教師 URL
-  puts info.elements[8].children[0].attributes["href"].value
-
-  # 馬体重
-  puts info.elements[9].children[0].text
-
-  # 単勝オッズ
-  puts "単勝オッズ"
-  puts info.elements[10].children[0].text
-
-  # 人気
-  puts "単勝人気"
-  puts info.elements[11].children[0].text
-end
-
 
 # puts horse_info
 # <td class="txt_l horsename">
@@ -111,8 +161,6 @@ end
 # <td class="txt_l">
 #  ..
 # ......
-
-
 
 # est_venture_100_list = []
 #
@@ -151,8 +199,6 @@ end
 #     data.push(url.tosjis)
 #     data.push(logo.tosjis)
 #
-
-
 
 
 #html = open(url, "r:cp932").read.encode('utf-8')
