@@ -152,9 +152,9 @@ class Race
 
   # CSVにエクスポート
   def self.race_to_csv(horse_list)
-    # binding.pry
-    puts "race_csv"
-    CSV.open("race_info.csv", "wb") do |csv|
+    header = ["枠", "馬番", "名前", "馬齢", "斤量", "ジョッキー", "ジョッキーURL", "調教師",
+      "調教者URL", "体重", "単勝オッズ", "人気"]
+    CSV.open("race_info.csv", "wb", :headers => header, :write_headers => true) do |csv|
       #[[],[],[]]となっている
       horse_list.each do |r|
         csv << r
@@ -168,9 +168,14 @@ class Race
 
   # ↑と同じような感じなので、まとめられそう
   def self.horse_detail_to_csv(horse_details)
+    header = ["日付", "開催", "天気", "レース番目", "レース名", "頭数", "枠番", "馬番", "オッズ",
+      "人気", "着順", "騎手", "斤量", "距離", "馬場状態", "タイム", "着差", "通過", "ペース",
+      "ラスト3ハロン", "体重", "1位(2位)の馬", "賞金"]
+
 
     puts "detail_csv"
-    CSV.open("horse_details_info.csv", "wb") do |csv|
+    CSV.open("horse_details_info.csv", "wb" , :headers => header, :write_headers => true) do |csv|
+
       # 馬の情報を入れていく
       # binding.pry
       # horse_detail_data.each { |hoge| csv << hoge }
